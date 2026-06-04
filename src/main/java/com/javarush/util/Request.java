@@ -1,5 +1,5 @@
 package com.javarush.util;
 
 public interface Request {
-    // db requests
+    String createSchemaWorldIfNotExists = "CREATE SCHEMA IF NOT EXISTS world";
 }
