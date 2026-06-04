@@ -1,16 +1,17 @@
 version: '3.9'
 services:
-  postgres:
-    image: postgres:latest
-    container_name: final4_postgres
+  mysql:
+    image: mysql:latest
+    container_name: final4-mysql
     environment:
-      POSTGRES_USER: postgres_user
-      POSTGRES_PASSWORD: postgres_password
-      POSTGRES_DB: postgres_db
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: world
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pgdata:/var/lib/postgresql/data/data
+      - mysql_data:/var/lib/mysql
 
   redis:
     image: redis:8
@@ -19,4 +20,4 @@ services:
       - "6379:6379"
 
 volumes:
-  pgdata:
+  mysql_data:

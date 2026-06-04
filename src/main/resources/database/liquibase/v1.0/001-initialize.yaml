@@ -1,0 +1,7 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-initialize
+      author: Vadim M.
+      changes:
+        - sqlFile:
+            path: database/dump.sql
