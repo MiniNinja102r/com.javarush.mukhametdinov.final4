@@ -12,6 +12,7 @@ public final class Config {
     private static final String CONFIG_FILE = "config.yml";
     private static Map<String, Object> data;
     public static DatabaseConfig dbConfig;
+    public static RedisConfig redisConfig;
 
     public static void load() {
         Yaml yaml = new Yaml();
@@ -24,6 +25,7 @@ public final class Config {
                 throw new ConfigException("Произошла ошибка при чтении config.yml: файл пуст или невалиден");
 
             loadDatabase();
+            loadRedis();
         } catch (Exception e) {
             throw new ConfigException("Не удалось загрузить конфигурацию: " + e.getMessage());
         }
@@ -46,6 +48,17 @@ public final class Config {
                 host, name, username, password, buildDbUrl(host, name, port), port,
                 timeout, idleTestPeriod, minPoolSize, maxPoolSize
         );
+    }
+
+    private static void loadRedis() {
+        final Map<String, Object> section = (Map<String, Object>) data.get("redis");
+        requireConfigSection(section, "redis");
+
+        String host = (String) section.get("host");
+        String password = (String) section.get("password");
+        int port = (Integer) section.get("port");
+        int timeout = (Integer) section.get("timeout");
+        redisConfig = new RedisConfig(host, password, port, timeout);
     }
 
     @NotNull
@@ -71,5 +84,11 @@ public final class Config {
                                  int idleTestPeriod,
                                  int minPoolSize,
                                  int maxPoolSize) {
+    }
+
+    public record RedisConfig(@NotNull String host,
+                              @NotNull String password,
+                              int port,
+                              int timeout) {
     }
 }

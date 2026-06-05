@@ -8,7 +8,13 @@ import org.hibernate.annotations.Type;
 import java.math.BigDecimal;
 
 @Entity
-@Table(schema = "world", name = "country_language")
+@Table(
+        schema = "world",
+        name = "country_language",
+        indexes = {
+                @Index(name = "country_language_ibfk_1_idx", columnList = "country_id")
+        }
+)
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)

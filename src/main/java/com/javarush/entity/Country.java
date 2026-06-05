@@ -8,7 +8,13 @@ import java.math.BigDecimal;
 import java.util.Set;
 
 @Entity
-@Table(schema = "world", name = "country")
+@Table(
+        schema = "world",
+        name = "country",
+        indexes = {
+                @Index(name = "country_ibfk_1_idx", columnList = "capital")
+        }
+)
 @Getter
 @Setter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -65,7 +71,7 @@ public final class Country {
     @Column(name = "head_of_state", length = 60, nullable = false)
     String headOfState;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "capital")
     City city;
 

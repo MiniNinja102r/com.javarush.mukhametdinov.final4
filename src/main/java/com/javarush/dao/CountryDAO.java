@@ -16,7 +16,7 @@ public final class CountryDAO {
     final SessionFactory sessionFactory;
 
     public List<Country> getAll() {
-        Query<Country> query = sessionFactory.getCurrentSession().createQuery(Request.selectFromCountry, Country.class);
-        return query.getResultList();
+        Query<Country> query = sessionFactory.getCurrentSession().createQuery(Request.selectFromCountryJoinFetchLanguage, Country.class);
+        return query.list();
     }
 }

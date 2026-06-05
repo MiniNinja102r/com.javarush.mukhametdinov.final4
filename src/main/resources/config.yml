@@ -9,4 +9,10 @@ database:
   min_pool_size: 2
   max_pool_size: 10
 
+redis:
+  host: redis
+  port: 6379
+  password: root
+  timeout: 3000
+
 general:

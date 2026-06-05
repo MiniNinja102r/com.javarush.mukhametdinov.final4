@@ -5,7 +5,13 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 @Entity
-@Table(schema = "world", name = "city")
+@Table(
+        schema = "world",
+        name = "city",
+        indexes = {
+                @Index(name = "city_ibfk_1_idx", columnList = "country_id")
+        }
+)
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Getter
 @Setter

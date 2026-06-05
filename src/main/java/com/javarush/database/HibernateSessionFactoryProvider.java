@@ -9,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.hibernate.HibernateException;
 import org.hibernate.SessionFactory;
+import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.cfg.Configuration;
 
 import java.util.Properties;
@@ -51,21 +52,22 @@ public final class HibernateSessionFactoryProvider implements SessionFactoryProv
         final var config = Config.dbConfig;
         final Properties props = new Properties();
 
-        props.setProperty("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver");
-        props.setProperty("hibernate.connection.url", config.url());
-        props.setProperty("hibernate.connection.username", config.username());
-        props.setProperty("hibernate.connection.password", config.password());
-        props.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
-        props.setProperty("hibernate.hbm2ddl.auto", "validate");
+        props.setProperty(AvailableSettings.DRIVER, "com.mysql.cj.jdbc.Driver");
+        props.setProperty(AvailableSettings.URL, config.url());
+        props.setProperty(AvailableSettings.USER, config.username());
+        props.setProperty(AvailableSettings.PASS, config.password());
+        props.setProperty(AvailableSettings.DIALECT, "org.hibernate.dialect.MySQLDialect");
+        props.setProperty(AvailableSettings.HBM2DDL_AUTO, "validate");
+        props.setProperty(AvailableSettings.CURRENT_SESSION_CONTEXT_CLASS, "thread");
 
         // Connection pool
-        props.setProperty("hibernate.c3p0.min_size", String.valueOf(config.minPoolSize()));
-        props.setProperty("hibernate.c3p0.max_size", String.valueOf(config.maxPoolSize()));
-        props.setProperty("hibernate.c3p0.timeout", String.valueOf(config.timeout()));
-        props.setProperty("hibernate.c3p0.idle_test_period", String.valueOf(config.idleTestPeriod()));
+        props.setProperty(AvailableSettings.C3P0_MIN_SIZE, String.valueOf(config.minPoolSize()));
+        props.setProperty(AvailableSettings.C3P0_MAX_SIZE, String.valueOf(config.maxPoolSize()));
+        props.setProperty(AvailableSettings.C3P0_TIMEOUT, String.valueOf(config.timeout()));
+        props.setProperty(AvailableSettings.C3P0_IDLE_TEST_PERIOD, String.valueOf(config.idleTestPeriod()));
 
-        props.setProperty("hibernate.show_sql", "true");
-        props.setProperty("hibernate.format_sql", "false");
+        props.setProperty(AvailableSettings.SHOW_SQL, "true");
+        props.setProperty(AvailableSettings.FORMAT_SQL, "false");
 
         return props;
     }
