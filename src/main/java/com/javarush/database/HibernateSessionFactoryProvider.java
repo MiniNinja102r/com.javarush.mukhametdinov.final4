@@ -51,21 +51,18 @@ public final class HibernateSessionFactoryProvider implements SessionFactoryProv
         final var config = Config.dbConfig;
         final Properties props = new Properties();
 
-        String url = "jdbc:mysql://" + config.host() + ":" + config.port() + "/" + config.name()
-                + "?useSSL=false&serverTimezone=UTC&characterEncoding=utf8";
-
         props.setProperty("hibernate.connection.driver_class", "com.mysql.cj.jdbc.Driver");
-        props.setProperty("hibernate.connection.url", url);
+        props.setProperty("hibernate.connection.url", config.url());
         props.setProperty("hibernate.connection.username", config.username());
         props.setProperty("hibernate.connection.password", config.password());
         props.setProperty("hibernate.dialect", "org.hibernate.dialect.MySQLDialect");
         props.setProperty("hibernate.hbm2ddl.auto", "validate");
 
         // Connection pool
-        props.setProperty("hibernate.c3p0.min_size", "2");
-        props.setProperty("hibernate.c3p0.max_size", "10");
-        props.setProperty("hibernate.c3p0.timeout", "300");
-        props.setProperty("hibernate.c3p0.idle_test_period", "3000");
+        props.setProperty("hibernate.c3p0.min_size", String.valueOf(config.minPoolSize()));
+        props.setProperty("hibernate.c3p0.max_size", String.valueOf(config.maxPoolSize()));
+        props.setProperty("hibernate.c3p0.timeout", String.valueOf(config.timeout()));
+        props.setProperty("hibernate.c3p0.idle_test_period", String.valueOf(config.idleTestPeriod()));
 
         props.setProperty("hibernate.show_sql", "true");
         props.setProperty("hibernate.format_sql", "false");

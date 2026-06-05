@@ -1,6 +1,7 @@
 package com.javarush.config;
 
 import com.javarush.exception.ConfigException;
+import com.javarush.util.Constant;
 import com.sun.istack.NotNull;
 import org.yaml.snakeyaml.Yaml;
 
@@ -37,10 +38,24 @@ public final class Config {
         String username = (String) section.get("username");
         String password = (String) section.get("password");
         int port = (Integer) section.get("port");
-        dbConfig = new DatabaseConfig(host, name, username, password, port);
+        int timeout = (Integer) section.get("timeout");
+        int idleTestPeriod = (Integer) section.get("idle_test_period");
+        int minPoolSize = (Integer) section.get("min_pool_size");
+        int maxPoolSize = (Integer) section.get("max_pool_size");
+        dbConfig = new DatabaseConfig(
+                host, name, username, password, buildDbUrl(host, name, port), port,
+                timeout, idleTestPeriod, minPoolSize, maxPoolSize
+        );
     }
 
-    public static void requireConfigSection(Object section, @NotNull String name) {
+    @NotNull
+    private static String buildDbUrl(@NotNull String host,
+                                     @NotNull String name,
+                                     int port) {
+        return String.format(Constant.dbUrlFormat, host, port, name);
+    }
+
+    private static void requireConfigSection(Object section, @NotNull String name) {
         if (section == null) {
             throw new ConfigException("Missing config section: " + name);
         }
@@ -50,6 +65,11 @@ public final class Config {
                                  @NotNull String name,
                                  @NotNull String username,
                                  @NotNull String password,
-                                 int port) {
+                                 @NotNull String url,
+                                 int port,
+                                 int timeout,
+                                 int idleTestPeriod,
+                                 int minPoolSize,
+                                 int maxPoolSize) {
     }
 }

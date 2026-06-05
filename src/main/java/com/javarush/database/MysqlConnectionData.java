@@ -2,7 +2,6 @@ package com.javarush.database;
 
 import com.javarush.config.Config;
 import com.javarush.util.Request;
-import com.sun.istack.NotNull;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -14,12 +13,12 @@ public final class MysqlConnectionData implements ConnectionData {
     @Override
     public Connection getConnection() {
         // connection pool
-        final Config.DatabaseConfig cfg = Config.dbConfig;
+        final Config.DatabaseConfig config = Config.dbConfig;
         try {
             Connection connection = DriverManager.getConnection(
-                    buildUrl(cfg),
-                    cfg.username(),
-                    cfg.password()
+                    config.url(),
+                    config.username(),
+                    config.password()
             );
 
             createSchemaIfNotExists(connection);
@@ -28,10 +27,6 @@ public final class MysqlConnectionData implements ConnectionData {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String buildUrl(@NotNull Config.DatabaseConfig cfg) {
-        return "jdbc:mysql://" + cfg.host() + ":" + cfg.port() + "/" + cfg.name();
     }
 
     private void createSchemaIfNotExists(Connection connection) {

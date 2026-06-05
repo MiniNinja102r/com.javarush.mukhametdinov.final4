@@ -1,6 +1,12 @@
 database:
-  host: localhost
+  host: mysql
   port: 3306
   name: world
   username: user
   password: password
+  timeout: 3000
+  idle_test_period: 300
+  min_pool_size: 2
+  max_pool_size: 10
+
+general:
