@@ -1,10 +1,82 @@
-### Запуск: `docker compose up -d`
-### Остановка: `docker compose down`
+# Итоговый проект по 4 модулю | Javarush
 
-### Мои результаты запусков:
-Redis: x ms  
-PostgreSQL: x ms
+Приложение загружает данные о городах, странах и языках из **MySQL** через
+**Hibernate**, преобразует их в упрощенную модель и кэширует в **Redis**.
+Полностью контейнеризован с помощью **Docker Compose** и **Dockerfile**.
 
-Повторный запуск спустя 10 секунд:  
-Redis: x ms  
-PostgreSQL: x ms
+Цель приложения - сравнить производительность получения данных
+напрямую из БД и через Redis. Сравнение происходит заданное количество раз с определенной паузой.
+Количество сравнений и временной интервал задаются в
+`src.config.yml`-файле.
+
+## Использованный технологии
+
+* Java 21
+* Hibernate
+* MySQL
+* Redis
+* Liquibase
+* Docker
+* Docker Compose
+* Jackson
+* P6Spy
+
+## Запуск
+
+Для запуска клонируйте репозиторий и выполните команду в терминале:
+```bash
+  docker compose up --build
+```
+После запуска:
+
+* MySQL / Redis / App поднимается в контейнерах
+* Liquibase применяет миграции
+* данные загружаются в Redis
+* выполняется сравнение скорости чтения
+
+### Конфигурация приложения
+Основная конфигурация работы приложения происходит в нашем `config.yml`,
+он разбит на 3 категории для удобства:
+```yaml
+database:
+  host: mysql
+  port: 3306
+  name: world
+  username: user
+  password: password
+  timeout: 3000
+  idle_test_period: 300
+  min_pool_size: 2
+  max_pool_size: 10
+```
+```yaml
+redis:
+  host: redis
+  port: 6379
+  password: root
+  timeout: 3000
+  thread_pool_size: 3
+  termination_await_sec: 5
+```
+```yaml
+general:
+  check_quantity: 10
+  check_pause_sec: 3
+```
+
+### Остановить сервисы
+```bash
+  docker compose down
+```
+
+## Результаты
+
+Мои личные результаты запусков *(10+ повторений по 10 запросов)*.
+Среднее время получения данных:
+
+| Источник | Время  |
+| -------- | ------ |
+| Redis    | ~10 ms |
+| MySQL    | ~28 ms |
+
+Ускорение составило примерно **в 2.8 раза**.
