@@ -87,12 +87,12 @@ public class Main {
             long stopMysql = System.currentTimeMillis();
 
             String redisResult = String.format(RESULT_FORMAT, "Redis", (stopRedis - startRedis));
-            String mysqlResult = String.format(RESULT_FORMAT, "MySQL", (startMysql - stopMysql));
+            String mysqlResult = String.format(RESULT_FORMAT, "MySQL", (stopMysql - startMysql));
 
-            System.out.println(redisResult);
-            System.out.println(mysqlResult);
+            System.out.println("\n" + redisResult);
+            System.out.println(mysqlResult + "\n");
 
-            testResults.put(i + 1, String.format("%s| %s", redisResult, mysqlResult));
+            testResults.put(i + 1, String.format("%s | %s", redisResult, mysqlResult));
             Thread.sleep(Config.generalConfig.checkPauseInSec() * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -105,9 +105,9 @@ public class Main {
             return;
         }
 
-        System.out.println("=".repeat(20));
+        System.out.println("=".repeat(40));
         results.forEach((k, v) -> System.out.println(k + ": " + v));
-        System.out.println("=".repeat(20));
+        System.out.println("=".repeat(40));
     }
 
     private void shutdown() {

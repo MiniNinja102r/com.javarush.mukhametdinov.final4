@@ -19,4 +19,4 @@ redis:
 
 general:
   check_quantity: 10
-  check_pause_sec: 5
+  check_pause_sec: 3
