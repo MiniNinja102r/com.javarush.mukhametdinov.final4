@@ -1,7 +1,6 @@
 package com.javarush.database;
 
 import com.javarush.config.Config;
-import com.javarush.util.Request;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -31,7 +30,7 @@ public final class MysqlConnectionData implements ConnectionData {
 
     private void createSchemaIfNotExists(Connection connection) {
         try (Statement statement = connection.createStatement()) {
-            statement.execute(Request.createSchemaWorldIfNotExists);
+            statement.execute("CREATE SCHEMA IF NOT EXISTS world");
         } catch (SQLException e) {
             System.out.println("Произошла ошибка при попытке создать схему world: " + e.getMessage());
         }

@@ -14,5 +14,9 @@ redis:
   port: 6379
   password: root
   timeout: 3000
+  thread_pool_size: 3
+  termination_await_sec: 5
 
 general:
+  check_quantity: 10
+  check_pause_sec: 5

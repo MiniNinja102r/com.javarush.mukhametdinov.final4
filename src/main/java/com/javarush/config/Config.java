@@ -13,6 +13,7 @@ public final class Config {
     private static Map<String, Object> data;
     public static DatabaseConfig dbConfig;
     public static RedisConfig redisConfig;
+    public static GeneralConfig generalConfig;
 
     public static void load() {
         Yaml yaml = new Yaml();
@@ -26,6 +27,7 @@ public final class Config {
 
             loadDatabase();
             loadRedis();
+            loadGeneral();
         } catch (Exception e) {
             throw new ConfigException("Не удалось загрузить конфигурацию: " + e.getMessage());
         }
@@ -58,7 +60,21 @@ public final class Config {
         String password = (String) section.get("password");
         int port = (Integer) section.get("port");
         int timeout = (Integer) section.get("timeout");
-        redisConfig = new RedisConfig(host, password, port, timeout);
+        int threadPoolSize = (Integer) section.get("thread_pool_size");
+        int terminationAwaitSec = (Integer) section.get("termination_await_sec");
+        redisConfig = new RedisConfig(
+                host, password, port, timeout,
+                threadPoolSize, terminationAwaitSec
+        );
+    }
+
+    private static void loadGeneral() {
+        final Map<String, Object> section = (Map<String, Object>) data.get("general");
+        requireConfigSection(section, "general");
+
+        int checkQuantity = (Integer) section.get("check_quantity");
+        int checkPauseInSec = (Integer) section.get("check_pause_sec");
+        generalConfig = new GeneralConfig(checkQuantity, checkPauseInSec);
     }
 
     @NotNull
@@ -89,6 +105,11 @@ public final class Config {
     public record RedisConfig(@NotNull String host,
                               @NotNull String password,
                               int port,
-                              int timeout) {
+                              int timeout,
+                              int threadPoolSize,
+                              int terminationAwaitSec) {
+    }
+
+    public record GeneralConfig(int checkQuantity, int checkPauseInSec) {
     }
 }

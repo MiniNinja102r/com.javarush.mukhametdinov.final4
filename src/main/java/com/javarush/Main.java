@@ -1,42 +1,33 @@
 package com.javarush;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javarush.config.Config;
 import com.javarush.dao.CityDAO;
-import com.javarush.dao.CountryDAO;
 import com.javarush.database.ConnectionData;
 import com.javarush.database.HibernateSessionFactoryProvider;
 import com.javarush.database.MysqlConnectionData;
 import com.javarush.database.SessionFactoryProvider;
 import com.javarush.entity.City;
-import com.javarush.entity.Country;
-import com.javarush.entity.CountryLanguage;
 import com.javarush.redis.CityCountry;
-import com.javarush.redis.Language;
+import com.javarush.service.DataTransferService;
+import com.javarush.redis.RedisManager;
+import com.javarush.service.DataSpeedTestService;
 import com.javarush.service.LiquibaseMigrationRunner;
 import com.sun.istack.NotNull;
-import io.lettuce.core.RedisClient;
-import io.lettuce.core.RedisURI;
-import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.sync.RedisStringCommands;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.Session;
 
-import java.time.Duration;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Main {
+    private static final String RESULT_FORMAT = "%s:\t%d ms";
     final SessionFactoryProvider sessionFactoryProvider;
-    final RedisClient redisClient;
-    final ObjectMapper mapper;
-    final CityDAO cityDAO;
-    final CountryDAO countryDAO;
+    final RedisManager redisManager;
+    final DataTransferService dataTransferService;
+    final DataSpeedTestService speedTestService;
 
     public Main() {
         Config.load();
@@ -48,100 +39,79 @@ public class Main {
         this.sessionFactoryProvider = new HibernateSessionFactoryProvider();
         sessionFactoryProvider.load();
 
-        this.redisClient = prepareRedisClient();
+        this.redisManager = new RedisManager();
+        redisManager.load();
 
-        this.mapper = new ObjectMapper();
-
-        this.cityDAO = new CityDAO(sessionFactoryProvider.getSessionFactory());
-        this.countryDAO = new CountryDAO(sessionFactoryProvider.getSessionFactory());
+        final CityDAO cityDAO = new CityDAO(sessionFactoryProvider.getSessionFactory());
+        final ObjectMapper mapper = new ObjectMapper();
+        this.dataTransferService = new DataTransferService(
+                redisManager, mapper, sessionFactoryProvider, cityDAO
+        );
+        this.speedTestService = new DataSpeedTestService(
+                redisManager, mapper, sessionFactoryProvider, cityDAO
+        );
     }
 
     public static void main(String[] args) {
         final Main main = new Main();
-        List<City> cities = main.fetchData();
-        List<CityCountry> preparedData = main.transformData(cities);
-        main.pushToRedis(preparedData);
+
+        Map<Integer, String> testResults = main.startTest();
+        main.broadcastResults(testResults);
 
         main.shutdown();
     }
 
-    @NotNull
-    private List<City> fetchData() {
-        try (Session session = sessionFactoryProvider.getSessionFactory().getCurrentSession()) {
-            session.beginTransaction();
-            List<City> allCities = new ArrayList<>();
+    private Map<Integer, String> startTest() {
+        List<City> cities = dataTransferService.fetchData();
+        List<CityCountry> preparedData = dataTransferService.transformData(cities);
+        dataTransferService.pushToRedis(preparedData);
 
-            int totalCount = cityDAO.getTotalCount();
-            int step = 500;
-            for (int i = 0; i < totalCount; i += step) {
-                allCities.addAll(cityDAO.getItems(i, step));
-            }
+        sessionFactoryProvider.getSessionFactory().getCurrentSession().close();
 
-            session.getTransaction().commit();
-            return allCities;
+        List<Integer> ids = List.of(3, 2545, 123, 4, 189, 89, 3458, 1189, 10, 102);
+        Map<Integer, String> testResults = new LinkedHashMap<>();
+        for (int i = 0; i < Config.generalConfig.checkQuantity(); i++) {
+            testEach(i, ids, testResults);
+        }
+        return testResults;
+    }
+
+    private void testEach(int i, List<Integer> ids, @NotNull Map<Integer, String> testResults) {
+        try {
+            long startRedis = System.currentTimeMillis();
+            speedTestService.testRedisData(ids);
+            long stopRedis = System.currentTimeMillis();
+
+            long startMysql = System.currentTimeMillis();
+            speedTestService.testMysqlData(ids);
+            long stopMysql = System.currentTimeMillis();
+
+            String redisResult = String.format(RESULT_FORMAT, "Redis", (stopRedis - startRedis));
+            String mysqlResult = String.format(RESULT_FORMAT, "MySQL", (startMysql - stopMysql));
+
+            System.out.println(redisResult);
+            System.out.println(mysqlResult);
+
+            testResults.put(i + 1, String.format("%s| %s", redisResult, mysqlResult));
+            Thread.sleep(Config.generalConfig.checkPauseInSec() * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
-    @NotNull
-    private List<CityCountry> transformData(@NotNull List<City> cities) {
-        return cities.stream().map(city -> {
-            CityCountry res = new CityCountry();
-            res.setId(city.getId());
-            res.setName(city.getName());
-            res.setPopulation(city.getPopulation());
-            res.setDistrict(city.getDistrict());
-
-            Country country = city.getCountry();
-            res.setAlternativeCountryCode(country.getCode2());
-            res.setContinent(country.getContinent());
-            res.setCountryCode(country.getCode());
-            res.setCountryName(country.getName());
-            res.setCountryPopulation(country.getPopulation());
-            res.setCountryRegion(country.getRegion());
-            res.setCountrySurfaceArea(country.getSurfaceArea());
-            Set<CountryLanguage> countryLanguages = country.getLanguages();
-            Set<Language> languages = countryLanguages.stream().map(cl -> {
-                Language language = new Language();
-                language.setLanguage(cl.getLanguage());
-                language.setIsOfficial(cl.getIsOfficial());
-                language.setPercentage(cl.getPercentage());
-                return language;
-            }).collect(Collectors.toSet());
-            res.setLanguages(languages);
-
-            return res;
-        }).collect(Collectors.toList());
-    }
-
-    @NotNull
-    private static RedisClient prepareRedisClient() {
-        final RedisURI uri = RedisURI.Builder
-                .redis(Config.redisConfig.host(), Config.redisConfig.port())
-                .withPassword(Config.redisConfig.password().toCharArray())
-                .withTimeout(Duration.ofMillis(Config.redisConfig.timeout()))
-                .build();
-
-        RedisClient redisClient = RedisClient.create(uri);
-        try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
-            System.out.println("\nConnected to Redis\n");
+    private void broadcastResults(Map<Integer, String> results) {
+        if (results == null || results.isEmpty()) {
+            System.out.println("No result data found, check logs");
+            return;
         }
-        return redisClient;
-    }
 
-    private void pushToRedis(List<CityCountry> data) {
-        try (StatefulRedisConnection<String, String> connection = redisClient.connect()) {
-            RedisStringCommands<String, String> sync = connection.sync();
-            for (CityCountry cityCountry : data) {
-                try {
-                    sync.set(String.valueOf(cityCountry.getId()), mapper.writeValueAsString(cityCountry));
-                } catch (JsonProcessingException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        System.out.println("=".repeat(20));
+        results.forEach((k, v) -> System.out.println(k + ": " + v));
+        System.out.println("=".repeat(20));
     }
 
     private void shutdown() {
         sessionFactoryProvider.close();
+        redisManager.shutdown();
     }
 }
